@@ -11,6 +11,7 @@
 5. Validación de outputs
 6. Resiliencia y errores del proveedor
 7. Testing de la integración
+8. Comparativa Mock vs LLM real (Hito 3.3)
 
 ---
 
@@ -120,6 +121,65 @@
 - Se mantienen los tests del mock y del pipeline.
 - Se actualizó la expectativa de `promptVersion` a `v2`.
 - No se ejecuta ninguna llamada externa durante los tests.
+
+---
+
+## 8. Comparativa Mock vs LLM real (Hito 3.3)
+
+**Prompt utilizado: auditoría del estado actual**
+
+> Lee `docs/FASE3-IMPLEMENTATION-CONTRACT.md` y revisa la implementación actual de `backend/src/ai-generation/`. Identifica requisitos explícitos relacionados con Mock vs LLM real, validación de outputs, grounding, trazabilidad, metadata y comparativas. No interpretes requisitos que no estén en el contrato como obligatorios.
+
+**Resultado:** Se confirmó que el contrato exige coexistencia de ambos gateways (§21.2), Mock mantenido para tests/CI (§2.6), evidencia verificable de generación real (§19) y trazabilidad mediante `AIGeneration` (§6.3).
+
+---
+
+**Prompt utilizado: captura de evidencia experimental**
+
+> Recupera de PostgreSQL los registros del BusinessProfile "Café Central Madrid" y sus `AIGeneration` y `Asset` asociados. Verifica que los 5 outputs reales del Hito 3.2 siguen disponibles mediante `responseSnapshot`. Ejecuta una generación completa con `LLM_PROVIDER=mock` utilizando el mismo BusinessProfile. Captura la evidencia de ambas ejecuciones: assetType, status, title, content, tokensUsed, modelUsed, promptVersion, contextVersion, timestamps. Compara los outputs Mock v1 históricos con los Mock v2 actuales para verificar determinismo.
+
+**Resultado:**
+- Los 5 outputs reales de 3.2 están disponibles en `AIGeneration.responseSnapshot`.
+- Se ejecutó Mock con el mismo BusinessProfile y `promptVersion=v2`.
+- Se verificó que los outputs Mock v1 (históricos) y v2 (actuales) son idénticos en `title`, `content` y `tokensUsed`.
+- Se verificó que `contextSnapshot` y `promptSnapshot` son idénticos entre Mock y Real para los 5 assets.
+- Git permanece limpio.
+
+---
+
+**Prompt utilizado: verificación de evidencia**
+
+> Comprueba si existen registros históricos de ejecuciones Mock anteriores del mismo BusinessProfile y compara los outputs. Verifica si la ejecución Mock sobreescritó los Assets del LLM real o creó Assets nuevos. Recalcula métricas agregadas desde los registros reales. Confirma que la latencia HTTP no fue instrumentada. Verifica la trazabilidad de los 5 outputs reales.
+
+**Resultado:**
+- Los outputs Mock v1 e v2 son idénticos (determinismo confirmado).
+- La ejecución Mock creó 5 Assets nuevos bajo un BusinessProfile nuevo; los Assets del LLM real no fueron modificados.
+- Las métricas fueron recalculadas y verificadas.
+- La latencia del proveedor no fue instrumentada.
+- Los 5 outputs reales están completos y trazables.
+
+---
+
+**Prompt utilizado: evaluación cualitativa asistida por LLM**
+
+> Evalúa cada uno de los 10 outputs existentes (5 Mock + 5 Real) desde cuatro dimensiones: Grounding (Adecuado/Parcial/Problemático), Coherencia (Adecuada/Mejorable/Problemática), Utilidad (Alta/Media/Baja) y Tono (Adecuado/Parcialmente adecuado/Inadecuado). Utiliza únicamente el BusinessProfile como referencia de verdad. No generes nuevos outputs. No asignes puntuaciones numéricas. No declares un ganador. Documenta únicamente diferencias observables.
+
+**Resultado:**
+- 10 outputs evaluados: 5 Mock + 5 Real.
+- Grounding: 7 Adecuado, 3 Parcial (WEBSITE_CONTENT Real, GOOGLE_BUSINESS_DESCRIPTION Real, FAQ Real — todos por embellishments/ampliaciones del LLM real).
+- Coherencia: 10 Adecuada.
+- Utilidad: 5 Media (Mock), 5 Alta (Real).
+- Tono: 4 Parcialmente adecuado (Mock), 6 Adecuado (Real).
+- Se documentaron 6 ejemplos concretos de ampliaciones semánticas del LLM real.
+
+**Restricciones metodológicas:**
+- Evaluación realizada por un LLM (MiMo v2.5), no por un evaluador humano.
+- Una única ejecución del evaluador.
+- n=10 outputs.
+- No constituye evaluación humana ni métrica objetiva.
+- No se utiliza para ranking.
+
+**Referencia completa:** [`docs/evidence-3.3-comparison.md`](evidence-3.3-comparison.md)
 
 ---
 

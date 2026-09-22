@@ -1101,6 +1101,7 @@ DiscoveryResponses
 - La implementación concreta de Entrega 2 es `MockLLMGateway`.
 - El mock es determinista y síncrono; no realiza llamadas de red ni requiere credenciales externas.
 - La arquitectura permite sustituir posteriormente el mock por un proveedor LLM real sin cambiar el flujo de dominio/aplicación.
+- La Fase 3 incorporó `OpenRouterLlmGateway` como implementación real del contrato `LLMGateway`, seleccionable mediante `LLM_PROVIDER=real`.
 - `validateGenerationOutput` valida la respuesta antes de persistir un `Asset`.
 - `AIGeneration` conserva `promptSnapshot`, `contextSnapshot`, `responseSnapshot`, versiones, modelo, temperatura, tokens, estado, timestamps y usuario solicitante.
 - Las generaciones fallidas se registran con estado `FAILED` y no crean un asset a partir de una respuesta inválida.
@@ -1176,11 +1177,21 @@ Resultado verificado para Entrega 2:
 - Validación del schema Prisma: PASS.
 - Migraciones aplicadas y ejecución E2E previamente verificada contra PostgreSQL real.
 
-### 9. Limitaciones conocidas y trabajo futuro
+### 9. Evidencia de la Fase 3
 
-No forman parte de la implementación ejecutable de Entrega 2:
+La Fase 3 generó evidencia verificable de generación con LLM real y comparativa con el Mock:
 
-- Integración con un proveedor LLM real.
+- **Generación real (Hito 3.2):** 5 assets generados con `liquid/lfm-2.5-2.6b:free` vía OpenRouter, 5/5 SUCCEEDED, 0 validaciones fallidas, 5.129 tokens totales.
+- **Comparativa Mock vs LLM real (Hito 3.3):** ejecución Mock con el mismo BusinessProfile, 5/5 SUCCEEDED, 189 tokens totales. Evaluación cualitativa asistida por LLM (MiMo v2.5) de los 10 outputs.
+- **Determinismo Mock verificado:** outputs idénticos entre `promptVersion=v1` e `v2` (19 días de diferencia).
+- **Trazabilidad:** ambos gateways registran `promptSnapshot`, `contextSnapshot`, `responseSnapshot`, versiones, modelo y temperatura en `AIGeneration`.
+
+Documentación completa: [`docs/evidence-3.3-comparison.md`](docs/evidence-3.3-comparison.md), [`docs/prompts-entrega-3.md`](docs/prompts-entrega-3.md).
+
+### 10. Limitaciones conocidas y trabajo futuro
+
+No forman parte de la implementación ejecutable de Entrega 2 (algunas fueron incorporadas en la Fase 3):
+
 - Publicación externa.
 - Integraciones CMS.
 - Integración con Google Business.

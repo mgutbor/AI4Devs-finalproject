@@ -29,7 +29,7 @@ export class PromptBuilder {
       case AssetType.SOCIAL_MEDIA_BIO:
         return 'Write a brief social media bio focused on the business identity, offer, audience, and location when available.';
       case AssetType.FAQ:
-        return 'Write a short FAQ using readable Question/Answer entries. Every answer must be supported by the canonical profile.';
+        return 'Write a short FAQ as plain text. The content field MUST be a single string, never an array or object. Format every FAQ entry exactly as:\nQ: <question>\nA: <answer>\n\nSeparate multiple entries with a blank line. Do not use question/answer JSON objects or arrays inside content. Every answer must be supported by the canonical profile.';
     }
   }
 }

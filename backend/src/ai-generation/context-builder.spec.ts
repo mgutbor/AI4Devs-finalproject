@@ -34,10 +34,18 @@ describe('ContextBuilder', () => {
       tone: 'Friendly',
       style: 'Direct',
       location: 'Madrid',
-      phone: null,
-      website: null,
-      gdprConsent: true,
     });
     expect(JSON.stringify(context)).not.toContain('raw discovery');
+  });
+
+  it('excludes phone, website and gdprConsent from the LLM context', () => {
+    const context = new ContextBuilder().build(profile());
+    const serialized = JSON.stringify(context);
+    expect(serialized).not.toContain('phone');
+    expect(serialized).not.toContain('website');
+    expect(serialized).not.toContain('gdprConsent');
+    expect(context).not.toHaveProperty('phone');
+    expect(context).not.toHaveProperty('website');
+    expect(context).not.toHaveProperty('gdprConsent');
   });
 });

@@ -183,6 +183,51 @@
 
 ---
 
+## 9. Datos enviados al proveedor LLM (Hito 3.5 — minimización)
+
+### Campos que se envían al proveedor
+
+El contexto `BusinessProfileContext` que se serializa a JSON en el prompt y se envía al proveedor LLM contiene únicamente:
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `businessName` | `string` | Nombre del negocio |
+| `category` | `string` | Categoría del negocio |
+| `services` | `string[]` | Lista de servicios ofrecidos |
+| `products` | `string[]` | Lista de productos ofrecidos |
+| `targetAudience` | `string` | Público objetivo |
+| `tone` | `string` | Tono de comunicación |
+| `style` | `string \| null` | Estilo de comunicación (opcional) |
+| `location` | `string` | Ubicación del negocio |
+
+### Campos que NO se envían al proveedor
+
+Los siguientes campos del `BusinessProfile` se utilizan internamente pero **no forman parte del contexto enviado al LLM**:
+
+| Campo | Motivo de exclusión |
+|---|---|
+| `phone` | No es necesario para generar los assets textuales |
+| `website` | No es necesario para generar los assets textuales |
+| `gdprConsent` | Se valida internamente antes de autorizar la generación, pero no se envía al proveedor |
+| `id` | Identificador interno, no relevante para la generación |
+| `businessId` | Identificador interno, no relevante para la generación |
+| `userId` | Identificador interno, no relevante para la generación |
+| `status` | Estado interno del workflow, no relevante para la generación |
+
+### Justificación
+
+La exclusión de `phone`, `website` y `gdprConsent` responde al **principio de minimización de datos**: únicamente se envían al proveedor externo los campos estrictamente necesarios para generar los cinco assets textuales. Los campos excluidos no aportan información relevante para la generación de contenido de marketing digital.
+
+### Snapshot de trazabilidad
+
+Los campos excluidos tampoco aparecen en:
+- `contextSnapshot` (almacenado en `AIGeneration`)
+- `promptSnapshot` (almacenado en `AIGeneration`)
+
+Esto garantiza que la información excluida del contexto LLM tampoco persiste en los snapshots de trazabilidad.
+
+---
+
 ## Pendiente de documentar en iteraciones posteriores
 
 No se han documentado prompts de CI/CD, deployment, UX/UI, accesibilidad ni E2E desplegado porque no se han implementado en esta iteración.

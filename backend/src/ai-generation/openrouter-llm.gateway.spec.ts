@@ -21,9 +21,6 @@ function request() {
       tone: 'Friendly',
       style: null,
       location: 'Madrid',
-      phone: null,
-      website: null,
-      gdprConsent: true,
     },
   };
 }

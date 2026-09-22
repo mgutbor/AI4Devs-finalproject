@@ -12,9 +12,6 @@ export class ContextBuilder {
       tone: profile.tone,
       style: profile.style,
       location: profile.location,
-      phone: profile.phone,
-      website: profile.website,
-      gdprConsent: profile.gdprConsent,
     };
   }
 

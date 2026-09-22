@@ -114,3 +114,123 @@ describe('Database-backed MVP journey', () => {
     expect(generations.every((generation) => generation.modelUsed === 'mock-deterministic-v1' && generation.temperature === 0.2 && generation.tokensUsed !== null)).toBe(true);
   });
 });
+
+describe('Cross-user ownership isolation', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  const createdUserIds: string[] = [];
+
+  beforeAll(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = module.createNestApplication();
+    app.setGlobalPrefix('api/v1');
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    await app.init();
+    prisma = app.get(PrismaService);
+  }, 30000);
+
+  afterAll(async () => {
+    for (const id of createdUserIds) {
+      await prisma.aIGeneration.deleteMany({ where: { requestedById: id } });
+      await prisma.user.delete({ where: { id } });
+    }
+    if (app) await app.close();
+  });
+
+  it('prevents User B from accessing User A business, profile, assets and generation', async () => {
+    const emailA = uniqueEmail();
+    const emailB = uniqueEmail();
+    const password = 'cross-user-test-pwd';
+
+    const regA = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ email: emailA, name: 'Owner A', password })
+      .expect(201);
+    const userAId = regA.body.user.id as string;
+    createdUserIds.push(userAId);
+
+    const regB = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ email: emailB, name: 'Owner B', password })
+      .expect(201);
+    const userBId = regB.body.user.id as string;
+    createdUserIds.push(userBId);
+
+    const loginA = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: emailA, password })
+      .expect(201);
+    const tokenA = loginA.body.accessToken as string;
+
+    const loginB = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: emailB, password })
+      .expect(201);
+    const tokenB = loginB.body.accessToken as string;
+
+    const businessA = await request(app.getHttpServer())
+      .post('/api/v1/business')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ name: 'Business of A' })
+      .expect(201);
+    const businessAId = businessA.body.id as string;
+
+    await request(app.getHttpServer())
+      .post('/api/v1/discovery/submit')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({
+        businessId: businessAId,
+        businessName: 'Business of A',
+        category: 'Cafe',
+        services: ['Coffee'],
+        products: [],
+        targetAudience: 'People nearby',
+        tone: 'Friendly',
+        location: 'Madrid',
+        gdprConsent: true,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/business-profile/review')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ businessId: businessAId })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/assets/generate-digital-presence')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ businessId: businessAId })
+      .expect(201);
+
+    const listAAsB = await request(app.getHttpServer())
+      .get(`/api/v1/assets?businessId=${businessAId}`)
+      .set('Authorization', `Bearer ${tokenB}`)
+      .expect(404);
+
+    const profileAsB = await request(app.getHttpServer())
+      .get(`/api/v1/business-profile?businessId=${businessAId}`)
+      .set('Authorization', `Bearer ${tokenB}`)
+      .expect(404);
+
+    const approveAsB = await request(app.getHttpServer())
+      .post('/api/v1/business-profile/review')
+      .set('Authorization', `Bearer ${tokenB}`)
+      .send({ businessId: businessAId })
+      .expect(404);
+
+    const generateAsB = await request(app.getHttpServer())
+      .post('/api/v1/assets/generate-digital-presence')
+      .set('Authorization', `Bearer ${tokenB}`)
+      .send({ businessId: businessAId })
+      .expect(404);
+
+    expect(listAAsB.body.message).toBeDefined();
+    expect(profileAsB.body.message).toBeDefined();
+    expect(approveAsB.body.message).toBeDefined();
+    expect(generateAsB.body.message).toBeDefined();
+  });
+});

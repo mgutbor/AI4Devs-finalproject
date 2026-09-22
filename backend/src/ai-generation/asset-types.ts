@@ -17,9 +17,6 @@ export interface BusinessProfileContext {
   tone: string;
   style: string | null;
   location: string;
-  phone: string | null;
-  website: string | null;
-  gdprConsent: boolean;
 }
 
 export interface LlmRequest {

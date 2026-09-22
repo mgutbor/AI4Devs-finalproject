@@ -45,7 +45,7 @@ class RecordingGateway implements LLMGateway {
     this.requests.push(request);
     return {
       title: request.assetType,
-      content: request.assetType === AssetType.FAQ ? 'Q: What?\\nA: This.' : `Only ${request.context.businessName}`,
+      content: request.assetType === AssetType.FAQ ? `Q: What does ${request.context.businessName} offer?\\nA: This.` : `Only ${request.context.businessName}`,
       tokensUsed: 3,
     };
   }
@@ -73,7 +73,7 @@ describe('AiGenerationService', () => {
         contextSnapshot: expect.stringContaining('Canonical Cafe'),
         responseSnapshot: expect.any(String),
         status: 'SUCCEEDED',
-        promptVersion: 'v1',
+        promptVersion: 'v2',
         contextVersion: 'v1',
         modelUsed: 'mock-deterministic-v1',
         temperature: 0.2,
@@ -89,7 +89,7 @@ describe('AiGenerationService', () => {
         if (request.assetType === AssetType.FAQ) {
           return { title: 'FAQ', content: 'invalid FAQ', tokensUsed: 2 };
         }
-        return { title: request.assetType, content: 'Valid content', tokensUsed: 2 };
+        return { title: request.assetType, content: `Valid content for ${request.context.businessName}`, tokensUsed: 2 };
       }),
     };
     const { prisma, transaction, generationCreate } = prismaMock();
@@ -107,7 +107,7 @@ describe('AiGenerationService', () => {
       contextSnapshot: expect.stringContaining('Canonical Cafe'),
       responseSnapshot: expect.stringContaining('FAQ response'),
       status: 'FAILED',
-      promptVersion: 'v1',
+      promptVersion: 'v2',
       contextVersion: 'v1',
       modelUsed: 'mock-deterministic-v1',
     }));

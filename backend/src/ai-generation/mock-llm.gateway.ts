@@ -25,6 +25,13 @@ export class MockLlmGateway implements LLMGateway {
       title: request.assetType.replaceAll('_', ' '),
       content,
       tokensUsed: content.split(/\s+/).length,
+      modelUsed: 'mock-deterministic-v1',
+      temperature: parseMockTemperature(),
     };
   }
+}
+
+function parseMockTemperature(): number {
+  const value = Number(process.env.AI_MOCK_TEMPERATURE ?? 0.2);
+  return Number.isFinite(value) && value >= 0 && value <= 2 ? value : 0.2;
 }

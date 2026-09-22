@@ -110,7 +110,7 @@ describe('Database-backed MVP journey', () => {
     expect(generations.every((generation) => generation.promptSnapshot.length > 0)).toBe(true);
     expect(generations.every((generation) => generation.contextSnapshot.includes('Automated E2E Cafe'))).toBe(true);
     expect(generations.every((generation) => generation.responseSnapshot.length > 0)).toBe(true);
-    expect(generations.every((generation) => generation.promptVersion === 'v1' && generation.contextVersion === 'v1')).toBe(true);
+    expect(generations.every((generation) => generation.promptVersion === 'v2' && generation.contextVersion === 'v1')).toBe(true);
     expect(generations.every((generation) => generation.modelUsed === 'mock-deterministic-v1' && generation.temperature === 0.2 && generation.tokensUsed !== null)).toBe(true);
   });
 });

@@ -32,6 +32,8 @@ export interface LlmResponse {
   title: string;
   content: string;
   tokensUsed: number;
+  modelUsed?: string;
+  temperature?: number;
 }
 
 export interface LLMGateway {

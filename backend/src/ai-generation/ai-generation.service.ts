@@ -21,14 +21,14 @@ export class AiGenerationService {
 
   async generateAll(profile: BusinessProfile, requestedById: string) {
     const context = this.contextBuilder.build(profile);
-    const results: Array<{ assetType: AssetType; title: string; content: string; tokensUsed: number; prompt: string; response: unknown }> = [];
+    const results: Array<{ assetType: AssetType; title: string; content: string; tokensUsed: number; modelUsed?: string; temperature?: number; prompt: string; response: unknown }> = [];
     const failures: Array<{ assetType: AssetType; prompt: string; response: unknown; error: string }> = [];
 
     for (const assetType of MVP_ASSET_TYPES) {
       const prompt = this.promptBuilder.build(assetType, context);
       try {
         const response = await this.gateway.complete({ assetType, prompt, context });
-        validateGenerationOutput(assetType, response);
+        validateGenerationOutput(assetType, response, context);
         results.push({ assetType, ...response, prompt, response: response });
       } catch (error) {
         failures.push({
@@ -54,8 +54,8 @@ export class AiGenerationService {
               status: 'FAILED',
               promptVersion: PROMPT_VERSION,
               contextVersion: CONTEXT_VERSION,
-              modelUsed: 'mock-deterministic-v1',
-              temperature: Number(process.env.AI_MOCK_TEMPERATURE ?? 0.2),
+              modelUsed: configuredModel(),
+              temperature: configuredTemperature(),
               completedAt: new Date(),
             },
           });
@@ -72,8 +72,8 @@ export class AiGenerationService {
               status: 'SUCCEEDED',
               promptVersion: PROMPT_VERSION,
               contextVersion: CONTEXT_VERSION,
-              modelUsed: 'mock-deterministic-v1',
-              temperature: Number(process.env.AI_MOCK_TEMPERATURE ?? 0.2),
+              modelUsed: result.modelUsed ?? configuredModel(),
+              temperature: result.temperature ?? configuredTemperature(),
               tokensUsed: result.tokensUsed,
               completedAt: new Date(),
             },
@@ -106,8 +106,8 @@ export class AiGenerationService {
             status: 'SUCCEEDED',
             promptVersion: PROMPT_VERSION,
             contextVersion: CONTEXT_VERSION,
-            modelUsed: 'mock-deterministic-v1',
-            temperature: Number(process.env.AI_MOCK_TEMPERATURE ?? 0.2),
+            modelUsed: result.modelUsed ?? configuredModel(),
+            temperature: result.temperature ?? configuredTemperature(),
             tokensUsed: result.tokensUsed,
             completedAt: new Date(),
           },
@@ -126,7 +126,7 @@ export class AiGenerationService {
     const prompt = this.promptBuilder.build(assetType, context);
     try {
       const response = await this.gateway.complete({ assetType, prompt, context });
-      validateGenerationOutput(assetType, response);
+      validateGenerationOutput(assetType, response, context);
       return this.prisma.$transaction(async (transaction) => {
         const asset = await transaction.asset.upsert({
           where: { businessProfileId_assetType: { businessProfileId: profile.id, assetType } },
@@ -145,8 +145,8 @@ export class AiGenerationService {
             status: 'SUCCEEDED',
             promptVersion: PROMPT_VERSION,
             contextVersion: CONTEXT_VERSION,
-            modelUsed: 'mock-deterministic-v1',
-            temperature: Number(process.env.AI_MOCK_TEMPERATURE ?? 0.2),
+            modelUsed: response.modelUsed ?? configuredModel(),
+            temperature: response.temperature ?? configuredTemperature(),
             tokensUsed: response.tokensUsed,
             completedAt: new Date(),
           },
@@ -165,12 +165,23 @@ export class AiGenerationService {
           status: 'FAILED',
           promptVersion: PROMPT_VERSION,
           contextVersion: CONTEXT_VERSION,
-          modelUsed: 'mock-deterministic-v1',
-          temperature: Number(process.env.AI_MOCK_TEMPERATURE ?? 0.2),
+          modelUsed: configuredModel(),
+          temperature: configuredTemperature(),
           completedAt: new Date(),
         },
       });
       throw new InternalServerErrorException('AI regeneration failed');
     }
   }
+}
+
+function configuredModel(): string {
+  return process.env.LLM_PROVIDER?.toLowerCase() === 'real'
+    ? process.env.LLM_MODEL ?? 'configured-llm'
+    : 'mock-deterministic-v1';
+}
+
+function configuredTemperature(): number {
+  const value = Number(process.env.AI_MOCK_TEMPERATURE ?? process.env.LLM_TEMPERATURE ?? 0.2);
+  return Number.isFinite(value) && value >= 0 && value <= 2 ? value : 0.2;
 }

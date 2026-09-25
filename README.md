@@ -1212,3 +1212,53 @@ Deudas técnicas conocidas, sin ampliar el alcance actual:
 - `AIGeneration` se persiste y puede auditarse directamente en PostgreSQL, pero todavía no tiene endpoint ni pantalla de consulta.
 - El JWT se conserva en `localStorage` en el frontend; una estrategia de almacenamiento más robusta corresponde a una fase posterior.
 - El control de conflictos de edición concurrente y las pruebas de componentes frontend quedan para una fase posterior.
+
+---
+
+## 16. Evolución futura
+
+La versión 1.0 establece una base funcional y arquitectónica para la generación asistida de contenidos mediante LLM, pero mantiene deliberadamente fuera de alcance determinadas capacidades avanzadas. Las siguientes líneas representan posibles evoluciones posteriores y no funcionalidades comprometidas de la versión actual.
+
+### 16.1. Hardening y operación
+
+- **Rate limiting y protección contra abuso:** establecer límites por usuario y endpoint, especialmente para operaciones de generación y regeneración, reduciendo el riesgo de abuso y consumo no controlado de recursos LLM.
+- **Hardening de la aplicación:** incorporar políticas de seguridad HTTP, CSP, HSTS y una auditoría sistemática de configuración de producción.
+- **Gestión avanzada de sesiones:** evolucionar el mecanismo JWT actual hacia access tokens de corta duración y refresh tokens rotativos.
+- **Control de costes y cuotas:** relacionar el consumo de tokens con costes estimados y establecer cuotas por usuario o plan.
+
+### 16.2. Evaluación y evolución de la IA
+
+- **Evaluación reproducible de modelos:** construir un pipeline `dataset → generación → evaluación → métricas` que permita comparar sistemáticamente modelos, proveedores y versiones de prompts.
+- **Evaluación avanzada de grounding:** ampliar la validación actual para detectar afirmaciones o atributos generados que no estén respaldados por el `BusinessProfile` utilizado como contexto canónico.
+- **Fallback y routing de proveedores:** aprovechar la abstracción `LLMGateway` para establecer estrategias de fallback o selección de proveedor/modelo en función del tipo de asset, disponibilidad, coste o latencia.
+- **Versionado dinámico de prompts y contexto:** evolucionar el versionado actual hacia un sistema que permita experimentar, activar y comparar distintas versiones de prompts y esquemas de contexto manteniendo trazabilidad completa.
+
+### 16.3. Observabilidad y trazabilidad
+
+- **Observabilidad distribuida:** incorporar métricas, tracing y logs estructurados que permitan correlacionar una generación desde la petición HTTP hasta el proveedor LLM y la persistencia final.
+- **Dashboards y alertas:** centralizar métricas de latencia, tokens, errores, disponibilidad y consumo para facilitar la operación del sistema.
+- **Historial de generaciones:** exponer en la interfaz el historial de generaciones almacenado en `AIGeneration`, permitiendo consultar versiones anteriores y comparar resultados.
+
+### 16.4. Escalabilidad y evolución de producto
+
+- **Generación asíncrona:** si el volumen de uso lo justificase, trasladar las generaciones a una arquitectura basada en colas y workers, desacoplando el procesamiento LLM de la petición HTTP.
+- **Mayor cobertura de testing:** incorporar tests de componentes frontend y pruebas E2E de navegador sobre los flujos críticos de usuario.
+- **Accesibilidad:** realizar una auditoría WCAG y automatizar parte de las comprobaciones de accesibilidad dentro del pipeline de calidad.
+- **Extensión funcional:** incorporar nuevos tipos de assets, internacionalización y configuraciones de tono/estilo más estructuradas.
+- **Infrastructure as Code:** evolucionar el despliegue actual hacia una definición reproducible de la infraestructura cuando el número de servicios o entornos lo justifique.
+
+### 16.5. Evolución metodológica
+
+Una línea de especial interés para futuras iteraciones es convertir la evidencia experimental de la Fase 3 en un sistema de evaluación continuo. El objetivo sería disponer de un conjunto versionado de perfiles de negocio y ejecutar periódicamente diferentes configuraciones de proveedor, modelo y prompt, obteniendo métricas comparables de:
+
+- grounding;
+- coherencia;
+- utilidad;
+- tono;
+- latencia;
+- tokens consumidos;
+- coste estimado.
+
+Esto permitiría evolucionar el sistema de una validación principalmente funcional hacia un proceso reproducible de evaluación y mejora continua de la generación basada en LLM.
+
+> **Alcance:** estas propuestas describen posibles líneas de evolución de la v1.0. Su implementación dependería de las necesidades reales de uso, de la evidencia obtenida en producción y de los objetivos de futuras iteraciones del producto.

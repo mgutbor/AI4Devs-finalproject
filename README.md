@@ -1101,12 +1101,12 @@ DiscoveryResponses
 - La implementación concreta de Entrega 2 es `MockLLMGateway`.
 - El mock es determinista y síncrono; no realiza llamadas de red ni requiere credenciales externas.
 - La arquitectura permite sustituir posteriormente el mock por un proveedor LLM real sin cambiar el flujo de dominio/aplicación.
-- La Fase 3 incorporó `OpenRouterLlmGateway` como implementación real del contrato `LLMGateway`, seleccionable mediante `LLM_PROVIDER=real`.
+- La Fase 3 incorporó `OpenRouterLlmGateway` como primer proveedor real del contrato `LLMGateway` (seleccionable mediante `LLM_PROVIDER=real`, actualmente en desuso). Posteriormente se integró `GroqLlmGateway` como proveedor actual de producción (seleccionable mediante `LLM_PROVIDER=groq`), con el modelo `openai/gpt-oss-120b`, structured output, instrumentación de tokens y latencia, y clasificación de errores. `MockLlmGateway` se mantiene para tests y CI.
 - `validateGenerationOutput` valida la respuesta antes de persistir un `Asset`.
 - `AIGeneration` conserva `promptSnapshot`, `contextSnapshot`, `responseSnapshot`, versiones, modelo, temperatura, tokens, estado, timestamps y usuario solicitante.
 - Las generaciones fallidas se registran con estado `FAILED` y no crean un asset a partir de una respuesta inválida.
 
-Para esta entrega, `promptVersion=v1` y `contextVersion=v1` son identificadores fijos explícitos del MVP; no existe todavía un sistema de versionado dinámico.
+Para esta entrega, `promptVersion=v2` y `contextVersion=v1` son identificadores fijos explícitos del MVP; no existe todavía un sistema de versionado dinámico.
 
 ### 8. Tests y verificación técnica
 
@@ -1121,7 +1121,7 @@ set +a
 npm test
 ```
 
-La suite actual contiene 12 suites y 27 tests, incluyendo pruebas unitarias de autenticación, ownership, normalización, BusinessProfile, pipeline IA, validación de outputs y assets, además de pruebas HTTP.
+La suite actual contiene 14 suites y 51 tests, incluyendo pruebas unitarias de autenticación, ownership, normalización, BusinessProfile, pipeline IA, validación de outputs y assets, además de pruebas HTTP, pruebas unitarias de los gateways LLM (Mock, OpenRouter y Groq) y pruebas E2E de base de datos.
 
 #### E2E automatizado database-backed
 
@@ -1183,10 +1183,12 @@ La Fase 3 generó evidencia verificable de generación con LLM real y comparativ
 
 - **Generación real (Hito 3.2):** 5 assets generados con `liquid/lfm-2.5-2.6b:free` vía OpenRouter, 5/5 SUCCEEDED, 0 validaciones fallidas, 5.129 tokens totales.
 - **Comparativa Mock vs LLM real (Hito 3.3):** ejecución Mock con el mismo BusinessProfile, 5/5 SUCCEEDED, 189 tokens totales. Evaluación cualitativa asistida por LLM (MiMo v2.5) de los 10 outputs.
-- **Determinismo Mock verificado:** outputs idénticos entre `promptVersion=v1` e `v2` (19 días de diferencia).
-- **Trazabilidad:** ambos gateways registran `promptSnapshot`, `contextSnapshot`, `responseSnapshot`, versiones, modelo y temperatura en `AIGeneration`.
+- **Determinismo Mock verificado:** outputs idénticos entre ejecuciones históricas con `promptVersion=v1` y la ejecución actual con `v2` (19 días de diferencia).
+- **Groq como proveedor de producción (Hito 3.7):** `GroqLlmGateway` integrado con modelo `openai/gpt-oss-120b`, structured output, 18 tests unitarios, instrumentación de tokens/latencia/rate-limit, y clasificación de errores.
+- **Validación E2E desplegada (25/09/2026):** ejecución manual del flujo completo contra la API desplegada en Render con Groq: Register → Login → Create Business → Discovery → Approve Profile → Generate (5/5 assets, ~5s, 3.570 tokens) → Edit → Regenerate (~1s) → Verificación del estado final. Las 9 etapas completadas con éxito. Esta ejecución corresponde a una única validación manual y no constituye un benchmark estadístico. Documentación completa: [`docs/evidence-3.7-groq.md`](docs/evidence-3.7-groq.md).
+- **Trazabilidad:** ambos gateways registran `promptSnapshot`, `contextSnapshot`, `responseSnapshot`, versiones, modelo, temperatura y tokens en `AIGeneration`.
 
-Documentación completa: [`docs/evidence-3.3-comparison.md`](docs/evidence-3.3-comparison.md), [`docs/prompts-entrega-3.md`](docs/prompts-entrega-3.md).
+Documentación completa: [`docs/evidence-3.3-comparison.md`](docs/evidence-3.3-comparison.md), [`docs/prompts-entrega-3.md`](docs/prompts-entrega-3.md), [`docs/evidence-3.7-groq.md`](docs/evidence-3.7-groq.md).
 
 ### 10. Limitaciones conocidas y trabajo futuro
 
@@ -1206,7 +1208,7 @@ No forman parte de la implementación ejecutable de Entrega 2 (algunas fueron in
 
 Deudas técnicas conocidas, sin ampliar el alcance actual:
 
-- `promptVersion` y `contextVersion` permanecen fijos en `v1`.
+- `promptVersion` (v2) y `contextVersion` (v1) permanecen fijos; no existe un sistema de versionado dinámico.
 - `AIGeneration` se persiste y puede auditarse directamente en PostgreSQL, pero todavía no tiene endpoint ni pantalla de consulta.
 - El JWT se conserva en `localStorage` en el frontend; una estrategia de almacenamiento más robusta corresponde a una fase posterior.
 - El control de conflictos de edición concurrente y las pruebas de componentes frontend quedan para una fase posterior.

@@ -284,18 +284,18 @@ describe('GroqLlmGateway', () => {
     expect(result.tokensUsed).toBe(3);
   });
 
-  it('configures base URL from LLM_BASE_URL', async () => {
+  it('always uses Groq base URL regardless of LLM_BASE_URL', async () => {
     const fetchSpy = mockFetchSuccess();
     global.fetch = fetchSpy;
 
     const gateway = new GroqLlmGateway(config({
       LLM_API_KEY: 'test-key',
-      LLM_BASE_URL: 'https://custom.groq.com/v1',
+      LLM_BASE_URL: 'https://openrouter.ai/api/v1',
     }));
     await gateway.complete(request());
 
     expect(fetchSpy).toHaveBeenCalledWith(
-      'https://custom.groq.com/v1/chat/completions',
+      'https://api.groq.com/openai/v1/chat/completions',
       expect.anything(),
     );
   });

@@ -74,7 +74,7 @@ export class GroqLlmGateway implements LLMGateway {
   private readonly maxRetries: number;
 
   constructor(config: ConfigService) {
-    this.baseUrl = (config.get<string>('LLM_BASE_URL') ?? 'https://api.groq.com/openai/v1').replace(/\/$/, '');
+    this.baseUrl = 'https://api.groq.com/openai/v1';
     this.apiKey = config.get<string>('LLM_API_KEY') ?? '';
     this.model = config.get<string>('LLM_MODEL') ?? 'openai/gpt-oss-120b';
     this.temperature = parseBoundedNumber(config.get<string>('LLM_TEMPERATURE'), 0.2, 0, 2);

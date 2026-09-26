@@ -26,10 +26,15 @@ import { LLM_GATEWAY } from './asset-types';
         realGateway: OpenRouterLlmGateway,
         groqGateway: GroqLlmGateway,
       ) => {
-        const provider = config.get<string>('LLM_PROVIDER', 'mock').toLowerCase();
-        if (provider === 'groq') return groqGateway;
+        const rawProvider = config.get<string>('LLM_PROVIDER');
+        if (rawProvider === undefined) {
+          return mockGateway;
+        }
+        const provider = rawProvider.trim().toLowerCase();
+        if (provider === 'mock') return mockGateway;
         if (provider === 'real') return realGateway;
-        return mockGateway;
+        if (provider === 'groq') return groqGateway;
+        throw new Error(`Invalid LLM_PROVIDER value: "${rawProvider}". Valid values: mock, real, groq`);
       },
     },
   ],

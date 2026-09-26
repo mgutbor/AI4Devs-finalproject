@@ -45,9 +45,17 @@ class RecordingGateway implements LLMGateway {
     this.requests.push(request);
     return {
       title: request.assetType,
-      content: request.assetType === AssetType.FAQ ? `Q: What does ${request.context.businessName} offer?\\nA: This.` : `Only ${request.context.businessName}`,
+      content: request.assetType === AssetType.FAQ ? `Q: What does ${request.context.businessName} offer?\nA: This.` : `Only ${request.context.businessName}`,
       tokensUsed: 3,
     };
+  }
+
+  getConfiguredModel(): string {
+    return 'mock-deterministic-v1';
+  }
+
+  getConfiguredTemperature(): number {
+    return 0.2;
   }
 }
 
@@ -91,6 +99,8 @@ describe('AiGenerationService', () => {
         }
         return { title: request.assetType, content: `Valid content for ${request.context.businessName}`, tokensUsed: 2 };
       }),
+      getConfiguredModel: () => 'mock-deterministic-v1',
+      getConfiguredTemperature: () => 0.2,
     };
     const { prisma, transaction, generationCreate } = prismaMock();
     const service = new AiGenerationService(prisma, gateway, new ContextBuilder(), new PromptBuilder());

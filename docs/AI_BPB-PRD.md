@@ -1,5 +1,7 @@
 % AI Business Presence Builder - Documento de requisitos del producto (PRD)
 
+> **Nota:** Este documento corresponde a una definición inicial del producto (Entrega 1). Algunas decisiones de diseño, arquitectura y stack tecnológico fueron posteriormente evolucionadas durante la implementación (Entregas 2 y 3). Para el estado implementado final, debe consultarse el contrato de implementación correspondiente ([`docs/ENTREGA2-IMPLEMENTATION-CONTRACT.md`](ENTREGA2-IMPLEMENTATION-CONTRACT.md), [`docs/FASE3-IMPLEMENTATION-CONTRACT.md`](FASE3-IMPLEMENTATION-CONTRACT.md)) y el [README.md](../README.md) actual.
+
 # 1. Resumen Ejecutivo
 
 Descripción general del producto

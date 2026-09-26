@@ -10,7 +10,7 @@ También puede añadirse la conversación completa como enlace o archivo adjunto
 4. [Especificación de la API](#4-especificación-de-la-api)
 5. [Historias de usuario](#5-historias-de-usuario)
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
-7. [Solicitudes de cambio](#7-pull-requests)
+7. [Solicitudes de cambio](#7-solicitudes-de-cambio)
 
 ---
 

@@ -150,6 +150,14 @@ export class GroqLlmGateway implements LLMGateway {
     }
   }
 
+  getConfiguredModel(): string {
+    return this.model;
+  }
+
+  getConfiguredTemperature(): number {
+    return this.temperature;
+  }
+
   private async request(body: Record<string, unknown>): Promise<{ payload: GroqResponse; headers: Headers }> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);

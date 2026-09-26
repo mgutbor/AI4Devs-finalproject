@@ -17,11 +17,11 @@
 5. Validación de outputs
 6. Resiliencia y errores del proveedor
 7. Testing de la integración
-8. Comparativa Mock vs LLM real (Hito 3.3)
-9. Datos enviados al proveedor LLM (Hito 3.5 — minimización)
-10. CI/CD y despliegue
-11. UX — estados de carga
-12. Groq como proveedor de producción (Hito 3.7)
+8. Comparativa Mock vs LLM real (Hito 3.8)
+9. Datos enviados al proveedor LLM (Hito 3.9 — minimización)
+10. CI/CD y despliegue (Hito 3.10)
+11. UX — estados de carga (Hito 3.12)
+12. Groq como proveedor de producción (Hito 3.13)
 13. Validación E2E desplegada
 14. Trazabilidad
 
@@ -138,7 +138,7 @@
 
 ---
 
-## 8. Comparativa Mock vs LLM real (Hito 3.3)
+## 8. Comparativa Mock vs LLM real (Hito 3.8)
 
 **Prompt utilizado: auditoría del estado actual**
 
@@ -332,7 +332,7 @@ Se modificó `frontend/src/App.tsx` para incluir estados de carga en las operaci
 
 ---
 
-## 12. Groq como proveedor de producción (Hito 3.7)
+## 12. Groq como proveedor de producción (Hito 3.13)
 
 ### Contexto
 

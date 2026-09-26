@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { api } from './api';
+import { FormEvent, useEffect, useMemo, useState, Dispatch, SetStateAction } from 'react';
+import { api, AuthError } from './api';
 import { Asset, Business, BusinessProfile, DiscoveryForm, User } from './types';
 
 const initialForm: DiscoveryForm = {
@@ -64,11 +64,37 @@ export function App() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, { title: string; content: string }>>({});
   const [form, setForm] = useState<DiscoveryForm>(initialForm);
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+
+  function handleAuthError(caught: unknown): boolean {
+    if (caught instanceof AuthError) {
+      setUser(null);
+      setBusiness(null);
+      setProfile(null);
+      setAssets([]);
+      setDrafts({});
+      setView('auth');
+      return true;
+    }
+    return false;
+  }
+
+  useEffect(() => {
+    setDrafts((prev) => {
+      const next = { ...prev };
+      for (const asset of assets) {
+        if (!(asset.id in next)) {
+          next[asset.id] = { title: asset.title, content: asset.content };
+        }
+      }
+      return next;
+    });
+  }, [assets]);
 
   const selectedStep = wizardSteps[step];
   const businessLabel = useMemo(() => business?.name ?? 'Your business', [business]);
@@ -83,7 +109,9 @@ export function App() {
     try {
       setBusinesses(await api.businesses());
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (!handleAuthError(caught)) {
+        setError(errorMessage(caught));
+      }
     }
   }
 
@@ -128,14 +156,16 @@ export function App() {
         setNotice('Your canonical profile is ready for review.');
       }
     } catch (caught) {
-      const message = errorMessage(caught);
-      if (message.toLowerCase().includes('not found')) {
-        setProfile(null);
-        setForm({ ...initialForm, businessName: nextBusiness.name });
-        setStep(0);
-        setView('wizard');
-      } else {
-        setError(message);
+      if (!handleAuthError(caught)) {
+        const message = errorMessage(caught);
+        if (message.toLowerCase().includes('not found')) {
+          setProfile(null);
+          setForm({ ...initialForm, businessName: nextBusiness.name });
+          setStep(0);
+          setView('wizard');
+        } else {
+          setError(message);
+        }
       }
     } finally {
       setBusy(false);
@@ -156,7 +186,9 @@ export function App() {
       setStep(0);
       setView('wizard');
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (!handleAuthError(caught)) {
+        setError(errorMessage(caught));
+      }
     } finally {
       setBusy(false);
     }
@@ -197,7 +229,9 @@ export function App() {
       setNotice('Discovery saved and the canonical profile was normalized.');
       setView('profile');
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (!handleAuthError(caught)) {
+        setError(errorMessage(caught));
+      }
     } finally {
       setBusy(false);
     }
@@ -211,7 +245,9 @@ export function App() {
       setProfile(await api.approveProfile(business.id));
       setNotice('Profile approved. Digital presence generation is now available.');
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (!handleAuthError(caught)) {
+        setError(errorMessage(caught));
+      }
     } finally {
       setBusy(false);
     }
@@ -227,7 +263,9 @@ export function App() {
       setView('assets');
       setNotice('Five assets generated and ready for review.');
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (!handleAuthError(caught)) {
+        setError(errorMessage(caught));
+      }
     } finally {
       setBusy(false);
     }
@@ -241,7 +279,9 @@ export function App() {
       setAssets(await api.assets(business.id));
       setView('assets');
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (!handleAuthError(caught)) {
+        setError(errorMessage(caught));
+      }
     } finally {
       setBusy(false);
     }
@@ -294,7 +334,7 @@ export function App() {
           {view === 'business' && <BusinessView businesses={businesses} busy={busy} onCreate={createBusiness} onSelect={selectBusiness} />}
           {view === 'wizard' && business && <WizardView form={form} setForm={setForm} step={step} selectedStep={selectedStep} busy={busy} onBack={() => setStep((current) => Math.max(current - 1, 0))} onNext={nextStep} onSubmit={submitWizard} />}
           {view === 'profile' && profile && <ProfileView profile={profile} busy={busy} onEdit={() => setView('wizard')} onApprove={approveProfile} onGenerate={generateAssets} />}
-          {view === 'assets' && <AssetsView assets={assets} busy={busy} onEdit={async (asset, title, content) => { setBusy(true); try { const updated = await api.editAsset(asset.id, title, content); setAssets((current) => current.map((item) => item.id === updated.id ? updated : item)); setNotice('Asset updated.'); } catch (caught) { setError(errorMessage(caught)); } finally { setBusy(false); } }} onRegenerate={async (asset) => { if (!business) return; setBusy(true); try { const updated = await api.regenerate(asset.id, business.id, asset.assetType); setAssets((current) => current.map((item) => item.id === updated.id ? updated : item)); setNotice('Asset regenerated from the approved profile.'); } catch (caught) { setError(errorMessage(caught)); } finally { setBusy(false); } }} />}
+          {view === 'assets' && <AssetsView assets={assets} busy={busy} drafts={drafts} setDrafts={setDrafts} onEdit={async (asset, title, content) => { setBusy(true); try { const updated = await api.editAsset(asset.id, title, content); setAssets((current) => current.map((item) => item.id === updated.id ? updated : item)); setDrafts((d) => ({ ...d, [asset.id]: { title: updated.title, content: updated.content } })); setNotice('Asset updated.'); } catch (caught) { if (!handleAuthError(caught)) { setError(errorMessage(caught)); } } finally { setBusy(false); } }} onRegenerate={async (asset) => { if (!business) return; setBusy(true); try { const updated = await api.regenerate(asset.id, business.id, asset.assetType); setAssets((current) => current.map((item) => item.id === updated.id ? updated : item)); setDrafts((d) => ({ ...d, [asset.id]: { title: updated.title, content: updated.content } })); setNotice('Asset regenerated from the approved profile.'); } catch (caught) { if (!handleAuthError(caught)) { setError(errorMessage(caught)); } } finally { setBusy(false); } }} />}
         </section>
       </div>
     </main>
@@ -322,8 +362,6 @@ function ProfileView({ profile, busy, onEdit, onApprove, onGenerate }: { profile
   return <div className="section-view"><div className="section-heading"><p className="eyebrow">CANONICAL PROFILE</p><h1>Review {profile.businessName}</h1><p>AI generation can use this profile only after you approve it.</p></div><div className="profile-grid">{[['Category', profile.category], ['Services', profile.services.join(', ')], ['Products', profile.products.join(', ') || 'Not provided'], ['Audience', profile.targetAudience], ['Tone', profile.tone], ['Style', profile.style || 'Not provided'], ['Location', profile.location], ['Phone', profile.phone || 'Not provided'], ['Website', profile.website || 'Not provided']].map(([label, value]) => <div className="profile-field" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div><div className="form-actions"><span className={`status status-${profile.status.toLowerCase()}`}>{profile.status}</span><button className="secondary-button" onClick={onEdit}>Edit discovery</button>{profile.status === 'NORMALIZED' && <button disabled={busy} onClick={() => void onApprove()}>{busy ? 'Approving...' : 'Approve profile'}</button>}{profile.status === 'APPROVED' && <button disabled={busy} onClick={() => void onGenerate()}>{busy ? 'Generating...' : 'Generate digital presence'}</button>}</div></div>;
 }
 
-function AssetsView({ assets, busy, onEdit, onRegenerate }: { assets: Asset[]; busy: boolean; onEdit: (asset: Asset, title: string, content: string) => Promise<void>; onRegenerate: (asset: Asset) => Promise<void> }) {
-  const [drafts, setDrafts] = useState<Record<string, { title: string; content: string }>>({});
-  useEffect(() => setDrafts(Object.fromEntries(assets.map((asset) => [asset.id, { title: asset.title, content: asset.content }]))), [assets]);
+function AssetsView({ assets, busy, onEdit, onRegenerate, drafts, setDrafts }: { assets: Asset[]; busy: boolean; onEdit: (asset: Asset, title: string, content: string) => Promise<void>; onRegenerate: (asset: Asset) => Promise<void>; drafts: Record<string, { title: string; content: string }>; setDrafts: Dispatch<SetStateAction<Record<string, { title: string; content: string }>>> }) {
   return <div className="section-view"><div className="section-heading"><p className="eyebrow">DIGITAL PRESENCE</p><h1>Review your five assets</h1><p>Every asset is grounded in the approved canonical profile and can be edited before use.</p></div>{assets.length === 0 ? <div className="empty-state">No assets yet. Approve your profile and generate the digital presence.</div> : <div className="asset-list">{assets.map((asset) => { const draft = drafts[asset.id] ?? { title: asset.title, content: asset.content }; return <article className="asset-card" key={asset.id}><div className="asset-card-heading"><div><p className="asset-type">{asset.assetType.replace(/_/g, ' ')}</p><span className="status">{asset.status}</span></div><button className="secondary-button" disabled={busy} onClick={() => void onRegenerate(asset)}>{busy ? 'Regenerating...' : 'Regenerate'}</button></div><label>Title<input value={draft.title} onChange={(event) => setDrafts({ ...drafts, [asset.id]: { ...draft, title: event.target.value } })} /></label><label>Content<textarea rows={6} value={draft.content} onChange={(event) => setDrafts({ ...drafts, [asset.id]: { ...draft, content: event.target.value } })} /></label><button disabled={busy} onClick={() => void onEdit(asset, draft.title, draft.content)}>{busy ? 'Saving...' : 'Save edit'}</button></article>; })}</div>}</div>;
 }

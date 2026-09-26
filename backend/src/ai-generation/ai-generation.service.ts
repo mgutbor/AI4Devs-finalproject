@@ -54,8 +54,8 @@ export class AiGenerationService {
               status: 'FAILED',
               promptVersion: PROMPT_VERSION,
               contextVersion: CONTEXT_VERSION,
-              modelUsed: configuredModel(),
-              temperature: configuredTemperature(),
+              modelUsed: this.gateway.getConfiguredModel(),
+              temperature: this.gateway.getConfiguredTemperature(),
               completedAt: new Date(),
             },
           });
@@ -72,8 +72,8 @@ export class AiGenerationService {
               status: 'SUCCEEDED',
               promptVersion: PROMPT_VERSION,
               contextVersion: CONTEXT_VERSION,
-              modelUsed: result.modelUsed ?? configuredModel(),
-              temperature: result.temperature ?? configuredTemperature(),
+              modelUsed: result.modelUsed ?? this.gateway.getConfiguredModel(),
+              temperature: result.temperature ?? this.gateway.getConfiguredTemperature(),
               tokensUsed: result.tokensUsed,
               completedAt: new Date(),
             },
@@ -106,8 +106,8 @@ export class AiGenerationService {
             status: 'SUCCEEDED',
             promptVersion: PROMPT_VERSION,
             contextVersion: CONTEXT_VERSION,
-            modelUsed: result.modelUsed ?? configuredModel(),
-            temperature: result.temperature ?? configuredTemperature(),
+            modelUsed: result.modelUsed ?? this.gateway.getConfiguredModel(),
+            temperature: result.temperature ?? this.gateway.getConfiguredTemperature(),
             tokensUsed: result.tokensUsed,
             completedAt: new Date(),
           },
@@ -145,8 +145,8 @@ export class AiGenerationService {
             status: 'SUCCEEDED',
             promptVersion: PROMPT_VERSION,
             contextVersion: CONTEXT_VERSION,
-            modelUsed: response.modelUsed ?? configuredModel(),
-            temperature: response.temperature ?? configuredTemperature(),
+            modelUsed: response.modelUsed ?? this.gateway.getConfiguredModel(),
+            temperature: response.temperature ?? this.gateway.getConfiguredTemperature(),
             tokensUsed: response.tokensUsed,
             completedAt: new Date(),
           },
@@ -165,23 +165,12 @@ export class AiGenerationService {
           status: 'FAILED',
           promptVersion: PROMPT_VERSION,
           contextVersion: CONTEXT_VERSION,
-          modelUsed: configuredModel(),
-          temperature: configuredTemperature(),
+          modelUsed: this.gateway.getConfiguredModel(),
+          temperature: this.gateway.getConfiguredTemperature(),
           completedAt: new Date(),
         },
       });
       throw new InternalServerErrorException('AI regeneration failed');
     }
   }
-}
-
-function configuredModel(): string {
-  return process.env.LLM_PROVIDER?.toLowerCase() === 'real'
-    ? process.env.LLM_MODEL ?? 'configured-llm'
-    : 'mock-deterministic-v1';
-}
-
-function configuredTemperature(): number {
-  const value = Number(process.env.AI_MOCK_TEMPERATURE ?? process.env.LLM_TEMPERATURE ?? 0.2);
-  return Number.isFinite(value) && value >= 0 && value <= 2 ? value : 0.2;
 }

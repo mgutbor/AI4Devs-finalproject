@@ -90,6 +90,14 @@ export class OpenRouterLlmGateway implements LLMGateway {
     }
   }
 
+  getConfiguredModel(): string {
+    return this.model;
+  }
+
+  getConfiguredTemperature(): number {
+    return this.temperature;
+  }
+
   private async request(body: Record<string, unknown>): Promise<OpenRouterResponse> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);

@@ -35,6 +35,8 @@ export interface LlmResponse {
 
 export interface LLMGateway {
   complete(request: LlmRequest): Promise<LlmResponse>;
+  getConfiguredModel(): string;
+  getConfiguredTemperature(): number;
 }
 
 export const LLM_GATEWAY = Symbol('LLM_GATEWAY');

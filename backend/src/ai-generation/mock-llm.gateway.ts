@@ -29,6 +29,14 @@ export class MockLlmGateway implements LLMGateway {
       temperature: parseMockTemperature(),
     };
   }
+
+  getConfiguredModel(): string {
+    return 'mock-deterministic-v1';
+  }
+
+  getConfiguredTemperature(): number {
+    return parseMockTemperature();
+  }
 }
 
 function parseMockTemperature(): number {

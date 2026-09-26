@@ -84,3 +84,7 @@ button:hover:not(:disabled) { background: #194f4a; }
   .form-actions .status { flex-basis: 100%; margin-right: 0; }
   .asset-card-heading { align-items: stretch; flex-direction: column; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .progress span { transition: none; }
+}

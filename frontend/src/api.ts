@@ -8,6 +8,13 @@ type RequestOptions = {
   body?: string;
 };
 
+export class AuthError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const token = localStorage.getItem('accessToken');
   const response = await fetch(`${API_URL}${path}`, {
@@ -20,6 +27,10 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   });
   const body: unknown = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem('accessToken');
+      throw new AuthError('Unauthorized', 401);
+    }
     const message = typeof body === 'object' && body !== null && 'message' in body
       ? String(body.message)
       : 'Request failed';

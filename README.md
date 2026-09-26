@@ -28,7 +28,7 @@ Permitir que pequeños negocios creen una presencia digital inicial de calidad p
 
 ### **0.4. URL del proyecto:**
 
-> NO DISPONIBLE AUN
+[https://ai-bpb-frontend.onrender.com/](https://ai-bpb-frontend.onrender.com/)
 
 ### 0.5. URL o archivo comprimido del repositorio
 
